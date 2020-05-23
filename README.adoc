@@ -1,0 +1,25 @@
+= opentransport-mbedtls
+
+This is a project to port mbedtls to the Retro68 toolchain for m68k and PPC Macs running an Open Transport networking stack.
+
+see https://tls.mbed.org/kb/how-to/how-do-i-port-mbed-tls-to-a-new-environment-OS
+
+TODO:
+
+* [*] minimal config.h
+* [*] build
+* [ ] implement network functions
+* [ ] implement entropy source (TBD, OS does not provide random afaik)
+* [ ] implement clock functions
+
+bonus:
+
+* [ ] implement filesystem functions
+* [ ] implement timing functions
+
+== notes
+build via:
+
+cmake .. -DCMAKE_TOOLCHAIN_FILE=/path/to/Retro68-build/toolchain/powerpc-apple-macos/cmake/retroppc.toolchain.cmake -DUNSAFE_BUILD=ON -DENABLE_TESTING=Off -DENABLE_PROGRAMS=Off
+
+and then just make, builds the static lib
