@@ -217,29 +217,10 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
  *
  * Note: on a blocking socket this function always returns 0!
  */
+// we're only going to support blocking operations
 static int net_would_block( const mbedtls_net_context *ctx )
 {
-    int err = 0;//errno;
-/*
-
-    if( ( fcntl( ctx->fd, F_GETFL ) & O_NONBLOCK ) != O_NONBLOCK )
-    {
-        errno = err;
-        return( 0 );
-    }
-
-    switch( errno = err )
-    {
-#if defined EAGAIN
-        case EAGAIN:
-#endif
-#if defined EWOULDBLOCK && EWOULDBLOCK != EAGAIN
-        case EWOULDBLOCK:
-#endif
-            return( 1 );
-    }
-*/
-    return( 0 );
+    return 0;
 }
 
 /*
@@ -361,29 +342,13 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
  */
 int mbedtls_net_set_block( mbedtls_net_context *ctx )
 {
-/*
-#if ( defined(_WIN32) || defined(_WIN32_WCE) ) && !defined(EFIX64) && \
-    !defined(EFI32)
-    u_long n = 0;
-    return( ioctlsocket( ctx->fd, FIONBIO, &n ) );
-#else
-    return( fcntl( ctx->fd, F_SETFL, fcntl( ctx->fd, F_GETFL ) & ~O_NONBLOCK ) );
-#endif*/
-    return( 0 );
+    return 0;
 }
 
+// TODO: not sure what the best thing to return is, since we only block
 int mbedtls_net_set_nonblock( mbedtls_net_context *ctx )
 {
-/*
-#if ( defined(_WIN32) || defined(_WIN32_WCE) ) && !defined(EFIX64) && \
-    !defined(EFI32)
-    u_long n = 1;
-    return( ioctlsocket( ctx->fd, FIONBIO, &n ) );
-#else
-    return( fcntl( ctx->fd, F_SETFL, fcntl( ctx->fd, F_GETFL ) | O_NONBLOCK ) );
-#endif
-*/
-    return( 0 );
+    return -1;
 }
 
 /*
@@ -393,6 +358,24 @@ int mbedtls_net_set_nonblock( mbedtls_net_context *ctx )
 int mbedtls_net_poll( mbedtls_net_context *ctx, uint32_t rw, uint32_t timeout )
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+
+    if (ctx->endpoint == kOTInvalidEndpointRef)
+    {
+        return MBEDTLS_ERR_NET_INVALID_CONTEXT;
+    }
+
+    OTResult look = OTLook(ctx->endpoint);
+    switch (look)
+    {
+        case T_DATA:
+        case T_EXDATA:
+            // TODO: is this correct?
+            return MBEDTLS_NET_POLL_READ;
+            break;
+        default:
+            ret = 0;
+            break;
+    }
 /*
     struct timeval tv;
 
@@ -507,15 +490,17 @@ int mbedtls_net_recv( void *ctx, unsigned char *buf, size_t len )
                 {
                     case T_DISCONNECT:
                         OTRcvDisconnect(endpoint, nil);
+                        ret = MBEDTLS_ERR_NET_CONN_RESET;
                         break;
                     case T_ORDREL:
                         err = OTRcvOrderlyDisconnect(endpoint);
                         if (err == noErr) OTSndOrderlyDisconnect(endpoint);
+                        ret = MBEDTLS_ERR_NET_RECV_FAILED;
                         break;
                     default:
+                        ret = MBEDTLS_ERR_NET_RECV_FAILED;
                         break;
                 }
-                ret = MBEDTLS_ERR_NET_RECV_FAILED;
                 break;
             default:
                 ret = MBEDTLS_ERR_NET_RECV_FAILED;
@@ -555,47 +540,11 @@ int mbedtls_net_recv( void *ctx, unsigned char *buf, size_t len )
 */
 }
 
-// not going to support non-blocking operations
+// OT doesn't seem to nicely support timeouts on operations
 int mbedtls_net_recv_timeout( void *ctx, unsigned char *buf,
                               size_t len, uint32_t timeout )
 {
-/*
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    struct timeval tv;
-    fd_set read_fds;
-    int fd = ((mbedtls_net_context *) ctx)->fd;
-
-    if( fd < 0 )
-        return( MBEDTLS_ERR_NET_INVALID_CONTEXT );
-
-    FD_ZERO( &read_fds );
-    FD_SET( fd, &read_fds );
-
-    tv.tv_sec  = timeout / 1000;
-    tv.tv_usec = ( timeout % 1000 ) * 1000;
-
-    ret = select( fd + 1, &read_fds, NULL, NULL, timeout == 0 ? NULL : &tv );
-
-    if( ret == 0 )
-        return( MBEDTLS_ERR_SSL_TIMEOUT );
-
-    if( ret < 0 )
-    {
-#if ( defined(_WIN32) || defined(_WIN32_WCE) ) && !defined(EFIX64) && \
-    !defined(EFI32)
-        if( WSAGetLastError() == WSAEINTR )
-            return( MBEDTLS_ERR_SSL_WANT_READ );
-#else
-        if( errno == EINTR )
-            return( MBEDTLS_ERR_SSL_WANT_READ );
-#endif
-
-        return( MBEDTLS_ERR_NET_RECV_FAILED );
-    }
-
-*/
-    return( mbedtls_net_recv( ctx, buf, len ) );
-    //return 0;
+    return mbedtls_net_recv(ctx, buf, len);
 }
 
 /*
@@ -632,7 +581,7 @@ int mbedtls_net_send( void *ctx, const unsigned char *buf, size_t len )
         return( MBEDTLS_ERR_NET_SEND_FAILED );
     }
 */
-    return( ret );
+    return ret;
 }
 
 /*
@@ -643,7 +592,7 @@ void mbedtls_net_close( mbedtls_net_context *ctx )
     // don't try to close an unopened endpoint
     if (ctx->endpoint == kOTInvalidEndpointRef) return;
 
-    // don't check the error status: we can't do anything useful here anyway
+    // ignore returned errors: we can't do handle them usefully here
     OTUnbind(ctx->endpoint);
     OTCloseProvider(ctx->endpoint);
     ctx->endpoint = kOTInvalidEndpointRef;
@@ -655,6 +604,7 @@ void mbedtls_net_close( mbedtls_net_context *ctx )
 void mbedtls_net_free( mbedtls_net_context *ctx )
 {
     // not really sure what the best way to translate this to Open Transport is
+    // TODO: do an OTSndOrderlyDisconnect or something?
     mbedtls_net_close(ctx);
 }
 
