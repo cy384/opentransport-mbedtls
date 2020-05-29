@@ -1,22 +1,8 @@
 /**
  * \file net_sockets.h
  *
- * \brief   Network sockets abstraction layer to integrate Mbed TLS into a
- *          BSD-style sockets API.
- *
- *          The network sockets module provides an example integration of the
- *          Mbed TLS library into a BSD sockets implementation. The module is
- *          intended to be an example of how Mbed TLS can be integrated into a
- *          networking stack, as well as to be Mbed TLS's network integration
- *          for its supported platforms.
- *
- *          The module is intended only to be used with the Mbed TLS library and
- *          is not intended to be used by third party application software
- *          directly.
- *
- *          The supported platforms are as follows:
- *              * Microsoft Windows and Windows CE
- *              * POSIX/Unix platforms including Linux, OS X
+ * \brief   Open Transport networking interface for mbedTLS by cy384.
+ *          Targeting relevant versions of Mac OS 7/8/9.
  *
  */
 /*
@@ -51,6 +37,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <OpenTransport.h>
+
 #define MBEDTLS_ERR_NET_SOCKET_FAILED                     -0x0042  /**< Failed to open a socket. */
 #define MBEDTLS_ERR_NET_CONNECT_FAILED                    -0x0044  /**< The connection to the given server / port failed. */
 #define MBEDTLS_ERR_NET_BIND_FAILED                       -0x0046  /**< Binding of the socket failed. */
@@ -77,16 +65,12 @@
 extern "C" {
 #endif
 
-/**
- * Wrapper type for sockets.
- *
- * Currently backed by just a file descriptor, but might be more in the future
- * (eg two file descriptors for combined IPv4 + IPv6 support, or additional
- * structures for hand-made UDP demultiplexing).
+/*
+ * instead of a socket FD, we've got an Open Transport EndpointRef
  */
 typedef struct mbedtls_net_context
 {
-    int fd;             /**< The underlying file descriptor                 */
+    EndpointRef endpoint;             /**< OT endpoint                 */
 }
 mbedtls_net_context;
 
