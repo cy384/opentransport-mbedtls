@@ -61,14 +61,22 @@ static int OT_init_done = 0;
  */
 static int net_prepare( void )
 {
+    int ret = 0;
+
     if (!OT_init_done)
     {
         OSStatus err = InitOpenTransport();
         if (err != noErr)
-            return( MBEDTLS_ERR_NET_SOCKET_FAILED );
-        OT_init_done = 1;
+        {
+            ret = MBEDTLS_ERR_NET_SOCKET_FAILED;
+        }
+        else
+        {
+            OT_init_done = 1;
+        }
     }
-    return( 0 );
+
+    return ret;
 }
 
 /*
@@ -86,8 +94,7 @@ int mbedtls_net_connect( mbedtls_net_context *ctx, const char *host,
                          const char *port, int proto )
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    if( ( ret = net_prepare() ) != 0 )
-        return( ret );
+    if((ret = net_prepare()) != 0) return ret;
 
 /*
     struct addrinfo hints, *addr_list, *cur;
@@ -138,8 +145,7 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
     int n;
     int ret = 0;
 
-    if( ( ret = net_prepare() ) != 0 )
-        return( ret );
+    if ((ret = net_prepare()) != 0) return ret;
 
 /*
     struct addrinfo hints, *addr_list, *cur;
@@ -444,7 +450,7 @@ int mbedtls_net_poll( mbedtls_net_context *ctx, uint32_t rw, uint32_t timeout )
     return( ret );
 }
 
-// ugly but probably as good as we can get, quote the documentation:
+// Ugly but probably as good as we can get. Quote the documentation:
 // "You should never call the OTIdle function in production code on a Macintosh
 //  computer."
 void mbedtls_net_usleep( unsigned long usec )
@@ -476,6 +482,49 @@ void mbedtls_net_usleep( unsigned long usec )
 int mbedtls_net_recv( void *ctx, unsigned char *buf, size_t len )
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    OTFlags unused_flags;
+    OTResult look;
+    EndpointRef endpoint = ((mbedtls_net_context*)ctx)->endpoint;
+    OSStatus err = noErr;
+
+    if (endpoint == kOTInvalidEndpointRef)
+    {
+        return MBEDTLS_ERR_NET_INVALID_CONTEXT;
+    }
+
+    ret = OTRcv(endpoint, (void *) buf, len, &unused_flags);
+
+    // TODO: handle more error cases
+    // TODO: make this less ugly
+    if (ret < 0)
+    {
+        switch (ret)
+        {
+            case kOTLookErr:
+            {
+                look = OTLook(endpoint);
+                switch (look)
+                {
+                    case T_DISCONNECT:
+                        OTRcvDisconnect(endpoint, nil);
+                        break;
+                    case T_ORDREL:
+                        err = OTRcvOrderlyDisconnect(endpoint);
+                        if (err == noErr) OTSndOrderlyDisconnect(endpoint);
+                        break;
+                    default:
+                        break;
+                }
+                ret = MBEDTLS_ERR_NET_RECV_FAILED;
+                break;
+            default:
+                ret = MBEDTLS_ERR_NET_RECV_FAILED;
+                break;
+            }
+        }
+    }
+
+    return ret;
 /*
     int fd = ((mbedtls_net_context *) ctx)->fd;
 
@@ -504,12 +553,9 @@ int mbedtls_net_recv( void *ctx, unsigned char *buf, size_t len )
         return( MBEDTLS_ERR_NET_RECV_FAILED );
     }
 */
-    return( ret );
 }
 
-/*
- * Read at most 'len' characters, blocking for at most 'timeout' ms
- */
+// not going to support non-blocking operations
 int mbedtls_net_recv_timeout( void *ctx, unsigned char *buf,
                               size_t len, uint32_t timeout )
 {
@@ -549,6 +595,7 @@ int mbedtls_net_recv_timeout( void *ctx, unsigned char *buf,
 
 */
     return( mbedtls_net_recv( ctx, buf, len ) );
+    //return 0;
 }
 
 /*
