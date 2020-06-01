@@ -8,12 +8,9 @@ TODO:
 
 * [*] minimal config.h
 * [*] build
-* [ ] implement network functions
+* [*] implement network functions (basic, blocking only, TCP only)
 * [ ] implement entropy source (TBD, OS does not provide random afaik)
 * [ ] implement clock functions
-
-bonus:
-
 * [ ] implement filesystem functions
 * [ ] implement timing functions
 
