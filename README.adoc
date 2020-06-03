@@ -11,7 +11,7 @@ TODO:
 * [*] implement network functions (basic, blocking only, TCP only)
 * [ ] implement entropy source (TBD, OS does not provide random afaik)
 * [ ] implement clock functions
-* [ ] implement filesystem functions
+* [*] implement filesystem functions (mostly done? seems like retro68 does almost everything)
 * [ ] implement timing functions
 
 == notes
