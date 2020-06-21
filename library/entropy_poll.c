@@ -234,4 +234,55 @@ int mbedtls_nv_seed_poll( void *data,
 }
 #endif /* MBEDTLS_ENTROPY_NV_SEED */
 
+#pragma message "Using a hacky source of entropy for Macintoshes"
+#pragma message "The OS does not provide a good RNG!"
+
+#if ((MBEDTLS_ENTROPY_BLOCK_SIZE % 8) != 0)
+#error "MBEDTLS_ENTROPY_BLOCK_SIZE must be divisible by 8 for my bad code!"
+#endif
+
+#include <MacTypes.h>
+#include <OSUtils.h>
+#include <Events.h>
+
+int mbedtls_hardware_poll( void *data,
+                           unsigned char *output, size_t len, size_t *olen )
+{
+	// buffer for random data
+	uint8_t buf[MBEDTLS_ENTROPY_BLOCK_SIZE] __attribute__((aligned(4)));
+
+	size_t i = 0;
+
+	Point p __attribute__((aligned(4)));
+	uint32_t tc __attribute__((aligned(4)));
+
+	// yes, this is bad
+	while (i < MBEDTLS_ENTROPY_BLOCK_SIZE)
+	{
+		// getmouse gives a point (two shorts) describing the position of the cursor
+		GetMouse(&p);
+		buf[i]   = (uint8_t)( p.v       & 0xFF);
+		buf[i+1] = (uint8_t)((p.v >> 8) & 0xFF);
+		buf[i+2] = (uint8_t)( p.h       & 0xFF);
+		buf[i+3] = (uint8_t)((p.h >> 8) & 0xFF);
+		i += 4;
+
+
+		// tickcount is the 60ths of a second since startup
+		tc = TickCount();
+		buf[i]   = (uint8_t)( tc        & 0xFF);
+		buf[i+1] = (uint8_t)((tc >>  8) & 0xFF);
+		buf[i+2] = (uint8_t)((tc >> 16) & 0xFF);
+		buf[i+3] = (uint8_t)((tc >> 24) & 0xFF);
+		i += 4;
+	}
+
+	// output the requested number of bytes
+	if (len < i) i = len;
+	memcpy(output, buf, i);
+	*olen = i;
+
+	return 0;
+}
+
 #endif /* MBEDTLS_ENTROPY_C */
