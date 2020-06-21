@@ -10,9 +10,9 @@ TODO:
 * [*] build
 * [*] implement network functions (basic, blocking only, TCP only)
 * [*] implement entropy source (more or less)
-* [ ] implement clock functions
+* [ ] implement clock functions (not required for functionality)
 * [*] implement filesystem functions (mostly done? seems like retro68 did everything)
-* [ ] implement timing functions
+* [ ] implement timing functions (not required for functionality)
 
 == entropy
 The classic Mac OS doesn't provide a real RNG.  This code uses the clock tick count and the mouse cursor position.  If you have any suggests for more entropy, I'd love to hear them.
@@ -20,6 +20,6 @@ The classic Mac OS doesn't provide a real RNG.  This code uses the clock tick co
 == notes
 build via:
 
-cmake .. -DCMAKE_TOOLCHAIN_FILE=/path/to/Retro68-build/toolchain/powerpc-apple-macos/cmake/retroppc.toolchain.cmake -DUNSAFE_BUILD=ON -DENABLE_TESTING=Off -DENABLE_PROGRAMS=Off
+cmake .. -DCMAKE_TOOLCHAIN_FILE=/path/to/Retro68-build/toolchain/powerpc-apple-macos/cmake/retroppc.toolchain.cmake -DENABLE_TESTING=Off -DENABLE_PROGRAMS=Off
 
 and then just make, builds the static lib.
