@@ -189,6 +189,11 @@ if(CMAKE_BUILD_TYPE STREQUAL "Coverage")
     endif(CMAKE_COMPILER_IS_GNU OR CMAKE_COMPILER_IS_CLANG)
 endif(CMAKE_BUILD_TYPE STREQUAL "Coverage")
 
+# this lets us use assembly implementations of some code for huge speed benefit
+if(CMAKE_SYSTEM_NAME MATCHES Retro68)
+add_compile_options(-march=68020)
+endif()
+
 if(LIB_INSTALL_DIR)
 else()
     set(LIB_INSTALL_DIR lib)

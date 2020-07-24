@@ -256,20 +256,21 @@ int mbedtls_hardware_poll( void *data,
 	Point p __attribute__((aligned(4)));
 	uint32_t tc __attribute__((aligned(4)));
 
+		// getmouse gives a point (two shorts) describing the position of the cursor
+		GetMouse(&p);
+
+		// tickcount is the 60ths of a second since startup
+		tc = TickCount();
+
 	// yes, this is bad
 	while (i < MBEDTLS_ENTROPY_BLOCK_SIZE)
 	{
-		// getmouse gives a point (two shorts) describing the position of the cursor
-		GetMouse(&p);
 		buf[i]   = (uint8_t)( p.v       & 0xFF);
 		buf[i+1] = (uint8_t)((p.v >> 8) & 0xFF);
 		buf[i+2] = (uint8_t)( p.h       & 0xFF);
 		buf[i+3] = (uint8_t)((p.h >> 8) & 0xFF);
 		i += 4;
 
-
-		// tickcount is the 60ths of a second since startup
-		tc = TickCount();
 		buf[i]   = (uint8_t)( tc        & 0xFF);
 		buf[i+1] = (uint8_t)((tc >>  8) & 0xFF);
 		buf[i+2] = (uint8_t)((tc >> 16) & 0xFF);
