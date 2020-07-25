@@ -2034,7 +2034,6 @@ static int mpi_montred( mbedtls_mpi *A, const mbedtls_mpi *N,
 }
 
 // FIXME TODO
-#include "/home/palomides/src/ssheven/ssheven-console.h"
 #include "Threads.h"
 /*
  * Sliding-window exponentiation: X = A^E mod N  (HAC 14.85)
@@ -2043,9 +2042,7 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
                          const mbedtls_mpi *E, const mbedtls_mpi *N,
                          mbedtls_mpi *_RR )
 {
-    long int start_tick = TickCount(); YieldToAnyThread();
-
-    print_string_i("mbedtls_mpi_exp_mod 1: "); print_int(TickCount() - start_tick); print_string_i("\n"); YieldToAnyThread();
+    YieldToAnyThread();
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t wbits, wsize, one = 1;
     size_t i, j, nblimbs;
@@ -2088,7 +2085,7 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
     MBEDTLS_MPI_CHK( mbedtls_mpi_grow( &W[1],  j ) );
     MBEDTLS_MPI_CHK( mbedtls_mpi_grow( &T, j * 2 ) );
 
-    print_string_i("mbedtls_mpi_exp_mod 2: "); print_int(TickCount() - start_tick); print_string_i("\n"); YieldToAnyThread();
+    YieldToAnyThread();
 
     /*
      * Compensate for negative A (and correct at the end)
@@ -2116,7 +2113,7 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
     else
         memcpy( &RR, _RR, sizeof( mbedtls_mpi ) );
 
-    print_string_i("mbedtls_mpi_exp_mod 3: "); print_int(TickCount() - start_tick); print_string_i("\n"); YieldToAnyThread();
+    YieldToAnyThread();
 
     /*
      * W[1] = A * R^2 * R^-1 mod N = A * R mod N
@@ -2128,7 +2125,7 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
 
     MBEDTLS_MPI_CHK( mpi_montmul( &W[1], &RR, N, mm, &T ) );
 
-    print_string_i("mbedtls_mpi_exp_mod 4: "); print_int(TickCount() - start_tick); print_string_i("\n"); YieldToAnyThread();
+    YieldToAnyThread();
 
     /*
      * X = R^2 * R^-1 mod N = R mod N
@@ -2136,7 +2133,7 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
     MBEDTLS_MPI_CHK( mbedtls_mpi_copy( X, &RR ) );
     MBEDTLS_MPI_CHK( mpi_montred( X, N, mm, &T ) );
 
-    print_string_i("mbedtls_mpi_exp_mod 5: "); print_int(TickCount() - start_tick); print_string_i("\n"); YieldToAnyThread();
+    YieldToAnyThread();
 
     if( wsize > 1 )
     {
@@ -2163,7 +2160,7 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
         }
     }
 
-    print_string_i("mbedtls_mpi_exp_mod 6: "); print_int(TickCount() - start_tick); print_string_i("\n"); YieldToAnyThread();
+    YieldToAnyThread();
 
     nblimbs = E->n;
     bufsize = 0;
@@ -2231,7 +2228,7 @@ YieldToAnyThread();
         }
     }
 
-    print_string_i("mbedtls_mpi_exp_mod 7: "); print_int(TickCount() - start_tick); print_string_i("\n"); YieldToAnyThread();
+    YieldToAnyThread();
 
     /*
      * process the remaining bits
@@ -2246,7 +2243,7 @@ YieldToAnyThread();
             MBEDTLS_MPI_CHK( mpi_montmul( X, &W[1], N, mm, &T ) );
     }
 
-    print_string_i("mbedtls_mpi_exp_mod 8: "); print_int(TickCount() - start_tick); print_string_i("\n"); YieldToAnyThread();
+    YieldToAnyThread();
 
     /*
      * X = A^E * R * R^-1 mod N = A^E mod N
@@ -2259,7 +2256,7 @@ YieldToAnyThread();
         MBEDTLS_MPI_CHK( mbedtls_mpi_add_mpi( X, N, X ) );
     }
 
-    print_string_i("mbedtls_mpi_exp_mod 9: "); print_int(TickCount() - start_tick); print_string_i("\n"); YieldToAnyThread();
+    YieldToAnyThread();
 
 cleanup:
 
@@ -2271,7 +2268,7 @@ cleanup:
     if( _RR == NULL || _RR->p == NULL )
         mbedtls_mpi_free( &RR );
 
-    print_string_i("mbedtls_mpi_exp_mod total time: "); print_int(TickCount() - start_tick); print_string_i(" ticks\n"); YieldToAnyThread();
+    YieldToAnyThread();
 
     return( ret );
 }
