@@ -2042,7 +2042,6 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
                          const mbedtls_mpi *E, const mbedtls_mpi *N,
                          mbedtls_mpi *_RR )
 {
-    YieldToAnyThread();
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     size_t wbits, wsize, one = 1;
     size_t i, j, nblimbs;
@@ -2168,6 +2167,7 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
     wbits   = 0;
     state   = 0;
 
+    long int iterations = 0;
     while( 1 )
     {
         if( bufsize == 0 )
@@ -2223,8 +2223,12 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
             state--;
             nbits = 0;
             wbits = 0;
+        }
 
-YieldToAnyThread();
+        iterations++;
+        if (iterations % 100 == 0)
+        {
+            YieldToAnyThread();
         }
     }
 

@@ -20,6 +20,9 @@ The classic Mac OS doesn't provide a real RNG.  This code uses the clock tick co
 == notes
 build via:
 
-cmake .. -DCMAKE_TOOLCHAIN_FILE=/path/to/Retro68-build/toolchain/powerpc-apple-macos/cmake/retroppc.toolchain.cmake -DENABLE_TESTING=Off -DENABLE_PROGRAMS=Off
+mkdir build && cd build
 
-and then just make, builds the static lib.
+cmake .. -DCMAKE_TOOLCHAIN_FILE=/path/to/Retro68-build/toolchain/powerpc-apple-macos/cmake/retroppc.toolchain.cmake -DUNSAFE_BUILD=ON -DENABLE_TESTING=Off -DENABLE_PROGRAMS=Off -DCMAKE_BUILD_TYPE=Release
+
+make && make install
+

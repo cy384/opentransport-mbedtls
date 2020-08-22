@@ -58,7 +58,9 @@
  *
  * Comment to disable the use of assembly code.
  */
+#if defined(__mc68020__) || defined(__ppc__)
 #define MBEDTLS_HAVE_ASM
+#endif
 
 /**
  * \def MBEDTLS_NO_UDBL_DIVISION
