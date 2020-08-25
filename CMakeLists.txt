@@ -149,7 +149,9 @@ endif(CMAKE_COMPILER_IS_GNU)
 
 if(CMAKE_COMPILER_IS_CLANG)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wwrite-strings -Wpointer-arith -Wimplicit-fallthrough -Wshadow -Wvla")
-    set(CMAKE_C_FLAGS_RELEASE     "-O2")
+# TODO uncomment once we get compiler bug solved
+#    set(CMAKE_C_FLAGS_RELEASE     "-O2")
+    set(CMAKE_C_FLAGS_RELEASE     "")
     set(CMAKE_C_FLAGS_DEBUG       "-O0 -g3")
     set(CMAKE_C_FLAGS_COVERAGE    "-O0 -g3 --coverage")
     set(CMAKE_C_FLAGS_ASAN        "-fsanitize=address -fno-common -fsanitize=undefined -fno-sanitize-recover=all -O3")
@@ -190,8 +192,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Coverage")
 endif(CMAKE_BUILD_TYPE STREQUAL "Coverage")
 
 # this lets us use assembly implementations of some code for huge speed benefit
+# n.b. compiler bug but still kinda works
 if(CMAKE_SYSTEM_NAME MATCHES Retro68)
-add_compile_options(-march=68020)
+add_compile_options(-mcpu=68020)
 endif()
 
 if(LIB_INSTALL_DIR)
