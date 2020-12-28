@@ -191,10 +191,15 @@ if(CMAKE_BUILD_TYPE STREQUAL "Coverage")
     endif(CMAKE_COMPILER_IS_GNU OR CMAKE_COMPILER_IS_CLANG)
 endif(CMAKE_BUILD_TYPE STREQUAL "Coverage")
 
-# this lets us use assembly implementations of some code for huge speed benefit
-# n.b. compiler bug but still kinda works
 if(CMAKE_SYSTEM_NAME MATCHES Retro68)
 add_compile_options(-mcpu=68020)
+add_compile_options(-O3)
+add_compile_options(-ffunction-sections)
+endif()
+
+if(CMAKE_SYSTEM_NAME MATCHES RetroPPC)
+add_compile_options(-O3)
+add_compile_options(-ffunction-sections)
 endif()
 
 if(LIB_INSTALL_DIR)
