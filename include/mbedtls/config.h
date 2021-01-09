@@ -2741,8 +2741,6 @@
  *
  * Enable the TCP and UDP over IPv6/IPv4 networking routines.
  *
- * \note Modified to work for Open Transport on Mac OS 7/8/9.
- *
  * \note See also our Knowledge Base article about porting to a new
  * environment:
  * https://tls.mbed.org/kb/how-to/how-do-i-port-mbed-tls-to-a-new-environment-OS
@@ -2751,7 +2749,7 @@
  *
  * This module provides networking routines.
  */
-#define MBEDTLS_NET_C
+//#define MBEDTLS_NET_C
 
 /**
  * \def MBEDTLS_OID_C

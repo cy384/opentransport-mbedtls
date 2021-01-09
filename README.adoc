@@ -1,21 +1,11 @@
 = opentransport-mbedtls
 
-This is a project to port mbedtls to the Retro68 toolchain for m68k and PPC Macs running an Open Transport networking stack.  My main interest is getting enough of mbedtls working to use libssh2.
+This is a port of just enough of mbedtls to work for libssh, for use by [ssheven](https://github.com/cy384/ssheven).
 
 see https://tls.mbed.org/kb/how-to/how-do-i-port-mbed-tls-to-a-new-environment-OS
 
-TODO:
-
-* [*] minimal config.h
-* [*] build
-* [*] implement network functions (basic, blocking only, TCP only)
-* [*] implement entropy source (more or less)
-* [ ] implement clock functions (not required for functionality)
-* [*] implement filesystem functions (mostly done? seems like retro68 did everything)
-* [ ] implement timing functions (not required for functionality)
-
 == entropy
-The classic Mac OS doesn't provide a real RNG.  This code uses the clock tick count and the mouse cursor position.  If you have any suggests for more entropy, I'd love to hear them.
+The classic Mac OS doesn't provide a real RNG.  This code uses a few different sources, including timers, disk usage, mouse position, etc., which are not great, but better options don't seem to exist.
 
 == notes
 build via:
