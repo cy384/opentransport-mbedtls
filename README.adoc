@@ -1,6 +1,6 @@
 = opentransport-mbedtls
 
-This is a port of just enough of mbedtls to work for libssh, for use by [ssheven](https://github.com/cy384/ssheven).
+This is a port of just enough of mbedtls to work for libssh on Mac OS 7/8/9, for use by [ssheven](https://github.com/cy384/ssheven).
 
 see https://tls.mbed.org/kb/how-to/how-do-i-port-mbed-tls-to-a-new-environment-OS
 
