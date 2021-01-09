@@ -234,54 +234,136 @@ int mbedtls_nv_seed_poll( void *data,
 }
 #endif /* MBEDTLS_ENTROPY_NV_SEED */
 
-#pragma message "Using a hacky source of entropy for Macintoshes"
-#pragma message "The OS does not provide a good RNG!"
+#pragma message "Warning: using mediocre entropy sources for classic Mac OS"
+#pragma message "Warning: the OS does not provide a real RNG!"
 
-#if ((MBEDTLS_ENTROPY_BLOCK_SIZE % 8) != 0)
-#error "MBEDTLS_ENTROPY_BLOCK_SIZE must be divisible by 8 for my bad code!"
-#endif
-
+#include <Gestalt.h>
 #include <MacTypes.h>
 #include <OSUtils.h>
 #include <Events.h>
+#include <Timer.h>
+#include <Files.h>
+#include <Folders.h>
+#include <Processes.h>
+
+#include <string.h>
 
 int mbedtls_hardware_poll( void *data,
                            unsigned char *output, size_t len, size_t *olen )
 {
-	// buffer for random data
-	uint8_t buf[MBEDTLS_ENTROPY_BLOCK_SIZE] __attribute__((aligned(4)));
+	size_t bytes_wanted = len;
+	size_t bytes_found = 0;
+	size_t bytes_returned = 0;
 
-	size_t i = 0;
+	union {
+		uint8_t bytes[64];
+		uint32_t words[16];
+	} random_data __attribute__((aligned(4))) = {0};
 
-	Point p __attribute__((aligned(4)));
-	uint32_t tc __attribute__((aligned(4)));
+	OSStatus err = noErr;
 
-		// getmouse gives a point (two shorts) describing the position of the cursor
-		GetMouse(&p);
+	// get higher resolution system timer
+	#if defined(__ppc__)
+	long int cpu_type = 0;
+	err = Gestalt(gestaltNativeCPUtype, &cpu_type);
 
-		// tickcount is the 60ths of a second since startup
-		tc = TickCount();
-
-	// yes, this is bad
-	while (i < MBEDTLS_ENTROPY_BLOCK_SIZE)
+	int r = 0;
+	if (err == noErr && cpu_type == gestaltCPU601)
 	{
-		buf[i]   = (uint8_t)( p.v       & 0xFF);
-		buf[i+1] = (uint8_t)((p.v >> 8) & 0xFF);
-		buf[i+2] = (uint8_t)( p.h       & 0xFF);
-		buf[i+3] = (uint8_t)((p.h >> 8) & 0xFF);
-		i += 4;
-
-		buf[i]   = (uint8_t)( tc        & 0xFF);
-		buf[i+1] = (uint8_t)((tc >>  8) & 0xFF);
-		buf[i+2] = (uint8_t)((tc >> 16) & 0xFF);
-		buf[i+3] = (uint8_t)((tc >> 24) & 0xFF);
-		i += 4;
+		// is mfspr available on all PPC? seems to work on the QEMU G3 emulation
+		__asm__("mfspr %0, 284\n" : "=r"(r));
+	}
+	else if (err == noErr)
+	{
+		// mftb not available on the 601
+		__asm__("mftb %0\n" : "=r"(r));
 	}
 
-	// output the requested number of bytes
-	if (len < i) i = len;
-	memcpy(output, buf, i);
-	*olen = i;
+	random_data.words[bytes_found/4] = r;
+	bytes_found += 4;
+	#else
+	UnsignedWide ms;
+	Microseconds(&ms);
+	random_data.words[bytes_found/4] = ms.lo;
+	bytes_found += 4;
+	#endif
+
+	// get startup fileystem data if we have HFS+
+	long int fs_type;
+	err = Gestalt(gestaltFSAttr, &fs_type);
+
+	if (err == noErr && (fs_type & (1L << gestaltFSSupports2TBVols)) != 0)
+	{
+		short volume_ref;
+		long dir_id;
+		XVolumeParam pb;
+
+		FindFolder(kOnSystemDisk, kSystemFolderType, kDontCreateFolder, &volume_ref, &dir_id);
+
+		pb.ioVRefNum = volume_ref;
+		pb.ioCompletion = 0;
+		pb.ioNamePtr = 0;
+		pb.ioVolIndex = 0;
+
+		err = PBXGetVolInfoSync(&pb);
+
+		random_data.words[bytes_found/4] = pb.ioVTotalBytes ^ pb.ioVAlBlkSiz ^ pb.ioVNxtCNID;
+		bytes_found += 4;
+		random_data.words[bytes_found/4] = pb.ioVFreeBytes ^ pb.ioVAlBlkSiz ^ pb.ioVWrCnt;
+		bytes_found += 4;
+		random_data.words[bytes_found/4] = pb.ioVLsMod ^ pb.ioVNmAlBlks ^ pb.ioVFrBlk;
+		bytes_found += 4;
+	}
+
+	// get mouse position
+	GetMouse((Point*)random_data.words+(bytes_found/4));
+	bytes_found += 4;
+
+	// get various bits of info about the process
+	ProcessSerialNumber psn;
+	ProcessInfoRec pi;
+
+	pi.processInfoLength = sizeof(pi);
+	pi.processName = nil;
+	pi.processAppSpec = nil;
+
+	GetCurrentProcess(&psn);
+	GetProcessInformation(&psn, &pi);
+
+	random_data.words[bytes_found/4] = psn.highLongOfPSN ^ psn.lowLongOfPSN;
+	bytes_found += 4;
+
+	random_data.words[bytes_found/4] = pi.processLaunchDate;
+	bytes_found += 4;
+
+	random_data.words[bytes_found/4] = 	pi.processActiveTime;
+	bytes_found += 4;
+
+	// get the number of ticks since boot
+	random_data.words[bytes_found/4] = TickCount();
+	bytes_found += 4;
+
+	// copy into output buffer, repeating if/as needed to fill it
+	if (bytes_wanted <= bytes_found)
+	{
+		memcpy(output, random_data.bytes, bytes_wanted);
+		bytes_returned = bytes_wanted;
+	}
+	else
+	{
+		size_t cp = 0;
+		while (bytes_wanted > 0)
+		{
+			cp = bytes_wanted > bytes_found ? bytes_found : bytes_wanted;
+
+			memcpy(output+bytes_returned, random_data.bytes, cp);
+
+			bytes_wanted -= cp;
+			bytes_returned += cp;
+		}
+	}
+
+	*olen = bytes_returned;
 
 	return 0;
 }
