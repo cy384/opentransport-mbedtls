@@ -7,6 +7,21 @@ Return 0 if all test cases pass, 1 if the output was not always as expected,
 or 1 (with a Python backtrace) if there was an operational error.
 """
 
+# Copyright The Mbed TLS Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import argparse
 from collections import namedtuple
 import itertools
@@ -79,11 +94,15 @@ class Inputs:
         self.dh_groups = set(['0xff'])
         self.key_types = set(['0xffff'])
         self.key_usage_flags = set(['0x80000000'])
-        # Hard-coded value for unknown algorithms
-        self.hash_algorithms = set(['0x010000fe'])
-        self.mac_algorithms = set(['0x02ff00ff'])
-        self.ka_algorithms = set(['0x30fc0000'])
-        self.kdf_algorithms = set(['0x200000ff'])
+        # Hard-coded values for unknown algorithms
+        #
+        # These have to have values that are correct for their respective
+        # PSA_ALG_IS_xxx macros, but are also not currently assigned and are
+        # not likely to be assigned in the near future.
+        self.hash_algorithms = set(['0x020000fe']) # 0x020000ff is PSA_ALG_ANY_HASH
+        self.mac_algorithms = set(['0x0300ffff'])
+        self.ka_algorithms = set(['0x09fc0000'])
+        self.kdf_algorithms = set(['0x080000ff'])
         # For AEAD algorithms, the only variability is over the tag length,
         # and this only applies to known algorithms, so don't test an
         # unknown algorithm.

@@ -1,7 +1,7 @@
 /*
  *  MbedTLS SSL context deserializer from base64 code
  *
- *  Copyright (C) 2006-2020, ARM Limited, All Rights Reserved
+ *  Copyright The Mbed TLS Contributors
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -15,8 +15,6 @@
  *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *
- *  This file is part of mbed TLS (https://tls.mbed.org)
  */
 
 #if !defined(MBEDTLS_CONFIG_FILE)
@@ -28,10 +26,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#if !defined(MBEDTLS_X509_CRT_PARSE_C) || !defined(MBEDTLS_ERROR_C)
+#if !defined(MBEDTLS_X509_CRT_PARSE_C) || !defined(MBEDTLS_ERROR_C) || \
+    !defined(MBEDTLS_SSL_TLS_C)
 int main( void )
 {
-    printf("MBEDTLS_X509_CRT_PARSE_C and/or MBEDTLS_ERROR_C not defined.\n");
+    printf("MBEDTLS_X509_CRT_PARSE_C and/or MBEDTLS_ERROR_C and/or "
+           "MBEDTLS_SSL_TLS_C not defined.\n");
     return( 0 );
 }
 #else
@@ -379,13 +379,13 @@ size_t read_next_b64_code( uint8_t **b64, size_t *max_len )
     int valid_balance = 0;  /* balance between valid and invalid characters */
     size_t len = 0;
     char pad = 0;
-    char c = 0;
+    int c = 0;
 
     while( EOF != c )
     {
         char c_valid = 0;
 
-        c = (char) fgetc( b64_file );
+        c = fgetc( b64_file );
 
         if( pad > 0 )
         {
