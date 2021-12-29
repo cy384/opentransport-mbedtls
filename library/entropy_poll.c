@@ -327,32 +327,26 @@ int mbedtls_hardware_poll( void *data,
 	bytes_found += 4;
 	#endif
 
-	// get startup fileystem data if we have HFS+
-	long int fs_type;
-	err = Gestalt(gestaltFSAttr, &fs_type);
+	// get startup fileystem data
+	// PBXGetVolInfoSync seems to only work correctly on PPC 8.5+
+	// so just use PBHGetVInfoSync instead
 
-	if (err == noErr && (fs_type & (1L << gestaltFSSupports2TBVols)) != 0)
-	{
-		short volume_ref;
-		long dir_id;
-		XVolumeParam pb;
+	short volume_ref = 0;
+	long dir_id = 0;
+	HParamBlockRec pb = {0};
 
-		FindFolder(kOnSystemDisk, kSystemFolderType, kDontCreateFolder, &volume_ref, &dir_id);
+	FindFolder(kOnSystemDisk, kSystemFolderType, kDontCreateFolder, &volume_ref, &dir_id);
 
-		pb.ioVRefNum = volume_ref;
-		pb.ioCompletion = 0;
-		pb.ioNamePtr = 0;
-		pb.ioVolIndex = 0;
+	pb.ioParam.ioVRefNum = volume_ref;
+	pb.ioParam.ioCompletion = 0;
+	pb.ioParam.ioNamePtr = 0;
 
-		err = PBXGetVolInfoSync(&pb);
+	PBHGetVInfoSync(&pb);
 
-		random_data.words[bytes_found/4] = pb.ioVTotalBytes ^ pb.ioVAlBlkSiz ^ pb.ioVNxtCNID;
-		bytes_found += 4;
-		random_data.words[bytes_found/4] = pb.ioVFreeBytes ^ pb.ioVAlBlkSiz ^ pb.ioVWrCnt;
-		bytes_found += 4;
-		random_data.words[bytes_found/4] = pb.ioVLsMod ^ pb.ioVNmAlBlks ^ pb.ioVFrBlk;
-		bytes_found += 4;
-	}
+	random_data.words[bytes_found/4] = pb.volumeParam.ioVNmAlBlks ^ pb.volumeParam.ioVAlBlkSiz ^ pb.volumeParam.ioVNxtCNID;
+	bytes_found += 4;
+	random_data.words[bytes_found/4] = pb.volumeParam.ioVLsMod ^ pb.volumeParam.ioVWrCnt ^ pb.volumeParam.ioVFrBlk;
+	bytes_found += 4;
 
 	// get mouse position
 	GetMouse((Point*)random_data.words+(bytes_found/4));
