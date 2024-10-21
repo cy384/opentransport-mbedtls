@@ -240,7 +240,7 @@ int mbedtls_nv_seed_poll(void *data,
 
 #include <string.h>
 
-int mbedtls_hardware_poll( void *data,
+int mbedtls_hardware_poll( __attribute__((unused)) void *data,
                            unsigned char *output, size_t len, size_t *olen )
 {
 	size_t bytes_wanted = len;
@@ -252,10 +252,10 @@ int mbedtls_hardware_poll( void *data,
 		uint32_t words[16];
 	} random_data __attribute__((aligned(4))) = {0};
 
-	OSStatus err = noErr;
-
 	// get higher resolution system timer
 	#if defined(__ppc__)
+	OSStatus err = noErr;
+
 	long int cpu_type = 0;
 	err = Gestalt(gestaltNativeCPUtype, &cpu_type);
 

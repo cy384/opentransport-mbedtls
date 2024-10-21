@@ -1523,7 +1523,7 @@ int mbedtls_x509_crt_parse_file(mbedtls_x509_crt *chain, const char *path)
     return ret;
 }
 
-int mbedtls_x509_crt_parse_path(mbedtls_x509_crt *chain, const char *path)
+int mbedtls_x509_crt_parse_path( __attribute__((unused)) mbedtls_x509_crt *chain, __attribute__((unused)) const char *path)
 {
     int ret = 0;
 // TODO: figure out for retro68

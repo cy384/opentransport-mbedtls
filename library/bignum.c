@@ -37,7 +37,7 @@
 
 #include "mbedtls/platform.h"
 
-
+#include "Threads.h"
 
 /*
  * Conditionally select an MPI sign in constant time.
